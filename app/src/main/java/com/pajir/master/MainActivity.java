@@ -1,15 +1,9 @@
 package com.pajir.master;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Service;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -19,22 +13,6 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     final int OVERLAY_PERMISSION_REQ_CODE = 1;
-    private FloatingWindowService.MyBinder mIBinder;
-    private ServiceConnection serviceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            mIBinder = (FloatingWindowService.MyBinder) service;
-            // 传参
-            Spinner spinnerTime = (Spinner) findViewById(R.id.spinnerTime);
-            int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString());
-            mIBinder.getChosedTime(chosedTime);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            mIBinder = null;
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,29 +54,12 @@ public class MainActivity extends AppCompatActivity {
     private void startFloatingWindowService(){
         // 这个是不绑定的方法
         Intent bindIntent = new Intent(this, FloatingWindowService.class);
+        // 传参
+        Spinner spinnerTime = (Spinner) findViewById(R.id.spinnerTime);
+        // 改参数，分变秒，debug时可调小
+        int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * 10;
         bindIntent.putExtra("chosedTime", chosedTime);
         startService(bindIntent);
-
-        // 绑定的方法
-        //Intent bindIntent = new Intent(this, FloatingWindowService.class);
-        //bindService(bindIntent, serviceConnection, BIND_AUTO_CREATE);
-
-        /*
-        android.os.Parcel _data = android.os.Parcel.obtain();
-        android.os.Parcel _reply = android.os.Parcel.obtain();
-        try{
-            _data.writeInterfaceToken("FloatingWindowService");
-            _data.writeInt(chosedTime);
-            mIBinder.transact(0x001, _data, _reply, 0);
-            _reply.readException();
-            Log.d("Master_Main", _reply.readString());
-
-        }catch(RemoteException e){
-            e.printStackTrace();
-        }finally {
-            _reply.recycle();
-            _data.recycle();
-        }*/
     }
 
     // 关闭悬浮窗，应该用不到这个

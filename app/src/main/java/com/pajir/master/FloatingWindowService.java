@@ -2,15 +2,12 @@ package com.pajir.master;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PixelFormat;
-import android.media.audiofx.AudioEffect;
-import android.os.Binder;
+import android.icu.text.AlphabeticIndex;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Parcel;
-import android.os.ParcelFileDescriptor;
-import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
@@ -22,19 +19,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 public class FloatingWindowService extends Service {
     public static boolean isStarted = false;
-    private static int allTime = 0;
+    // unit: second
+    private static int chosedTime = 0;
+    private static int leftTime = -1;
 
     private WindowManager windowManager;
     private WindowManager.LayoutParams layoutParams;
 
-    private MyBinder myBinder = new MyBinder();
-
     private TextView textViewCurTime;
+    private TextView textViewLeftTime;
     private View floatingView;
+
+    private Handler timeHandle;
+
+    private RecordReceiver recordReceiver;
 
     @Override
     public void onCreate(){
@@ -65,84 +69,97 @@ public class FloatingWindowService extends Service {
         layoutParams.alpha = 0.8f;
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+        // need to register a broadcast
+        recordReceiver = new RecordReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("RECORDFINISHED");
+        registerReceiver(recordReceiver, intentFilter);
     }
 
     @Override
     // bounded Bindservice() 这个传递数据
     public IBinder onBind(Intent intent){
-        onShowFloatingWindow();
-        return myBinder;
+        return null;
     }
 
     @Override
-    // unbounded Startservice() 没数据传递，实现简单，用于早期debug
+    // unbounded Startservice() 没数据传递，实现简单
     public int onStartCommand(Intent intent, int flags, int startId){
+        leftTime = chosedTime = intent.getIntExtra("chosedTime", 0);
+        Log.d("Master_Floating", "get chosedTime successfully");
         onShowFloatingWindow();
         return super.onStartCommand(intent, flags, startId);
     }
 
-    @Override
-    public boolean onUnbind(Intent intent){
-        Log.d("Master_Floating", "unbinded");
-        return super.onUnbind(intent);
+    private void stopCurService(){
+        windowManager.removeView(floatingView);
+        stopSelf();
     }
 
     @Override
     public void onDestroy() {
         isStarted = false;
+        // need to destroy this thread
+        timeHandle.removeCallbacksAndMessages(null);
+        // need to unregister boardcast receiver
+        unregisterReceiver(recordReceiver);
         super.onDestroy();
         Log.d("Master_Floating", "I destroy myself");
     }
 
-    private void onShowFloatingWindow(){
-        if(Settings.canDrawOverlays(this)){
-            LayoutInflater layoutInflater = LayoutInflater.from(this);
-            floatingView = layoutInflater.inflate(R.layout.service_floating, null);
-            // 直接关闭服务的按钮，调试用
-            Button button = floatingView.findViewById(R.id.buttonClose);
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    windowManager.removeView(floatingView);
-
-                    stopSelf();
-                }
-            });
-
-            textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
-            final Handler aHandle = new Handler(getMainLooper());
-            aHandle.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
-                    aHandle.postDelayed(this, 1000);
-                }
-             }, 10);
-
-            windowManager.addView(floatingView, layoutParams);
+    private void onShowFloatingWindow() {
+        if (!Settings.canDrawOverlays(this)) {
+            return;
         }
+        // 视图容器
+        LayoutInflater layoutInflater = LayoutInflater.from(this);
+        floatingView = layoutInflater.inflate(R.layout.service_floating, null);
+        // 直接关闭服务的按钮，调试用
+        Button button = floatingView.findViewById(R.id.buttonClose);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stopCurService();
+            }
+        });
+
+        // 这里开线程算时间，也可以直接用DigitalClock, TextClock...
+        textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
+        textViewLeftTime = floatingView.findViewById(R.id.textViewLeftTime);
+        timeHandle = new Handler(getMainLooper());
+        timeHandle.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if(leftTime == 0){
+                    Intent intent = new Intent();
+                    intent.setAction("RECORDFINISHED");
+                    sendBroadcast(intent);
+                    stopCurService();
+                    return;
+                }
+                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                leftTime -= 1;
+                textViewLeftTime.setText(Integer.toString(leftTime) + "/" + Integer.toString(chosedTime));
+                timeHandle.postDelayed(this, 1000);
+                //Log.d("Master_Floating", "I am calculating time");
+            }
+        }, 10);
+
+        TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
+        textViewAllTime.setText(Integer.toString(chosedTime / 60) + "min");
+
+        TextView textViewDuringTime = floatingView.findViewById(R.id.textViewDuringTime);
+        textViewDuringTime.setText("Master Time: " + calDuringTime("HH:mm", chosedTime));
+
+        windowManager.addView(floatingView, layoutParams);
     }
 
-
-
-    class MyBinder extends Binder{
-        @Override
-        protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException{
-            switch(code){
-                case 0x001:{
-                    data.enforceInterface("FloatingWindowService");
-                    int chosedTime = data.readInt();
-                    reply.writeNoException();
-                    reply.writeString("onTransact 0x001 ok");
-                    Log.d("Master_Floating", "Master time is " + Integer.toString(chosedTime));
-                    return true;
-                }
-            }
-            return super.onTransact(code, data, reply, flags);
-        }
-
-        public void getChosedTime(int chosedTime){
-            allTime = chosedTime;
-        }
+    private String calDuringTime(String format, int offset){
+        String startTime = new SimpleDateFormat(format).format(new Date());
+        SimpleDateFormat endDateFormat = new SimpleDateFormat(format);
+        Calendar c = new GregorianCalendar();
+        c.add(Calendar.SECOND, offset);
+        String endTime = endDateFormat.format(c.getTime());
+        return startTime + " - " + endTime;
     }
 }
