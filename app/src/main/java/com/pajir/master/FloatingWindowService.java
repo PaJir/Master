@@ -3,9 +3,14 @@ package com.pajir.master;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.media.audiofx.AudioEffect;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Parcel;
+import android.os.ParcelFileDescriptor;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
@@ -14,17 +19,20 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class FloatingWindowService extends Service {
     public static boolean isStarted = false;
+    private static int allTime = 0;
 
     private WindowManager windowManager;
     private WindowManager.LayoutParams layoutParams;
 
-    private Button button;
+    private MyBinder myBinder = new MyBinder();
+
     private TextView textViewCurTime;
     private View floatingView;
 
@@ -47,7 +55,7 @@ public class FloatingWindowService extends Service {
         }
         // 像素点格式
         layoutParams.format = PixelFormat.RGBA_8888;
-        layoutParams.gravity = Gravity.LEFT | Gravity.TOP;
+        //layoutParams.gravity = Gravity.LEFT | Gravity.TOP;
         // 窗口的行为准则
         // FLAG_NOT_TOUCH_MODAL: 不监听窗口之外的按键，这里可有可无
         // FLAG_LAYOUT_IN_SCREEN: 允许窗口占满整个屏幕
@@ -62,14 +70,21 @@ public class FloatingWindowService extends Service {
     @Override
     // bounded Bindservice() 这个传递数据
     public IBinder onBind(Intent intent){
-        return null;
+        onShowFloatingWindow();
+        return myBinder;
     }
 
     @Override
-    // unbounded Startservice() 没数据传递
+    // unbounded Startservice() 没数据传递，实现简单，用于早期debug
     public int onStartCommand(Intent intent, int flags, int startId){
         onShowFloatingWindow();
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent){
+        Log.d("Master_Floating", "unbinded");
+        return super.onUnbind(intent);
     }
 
     @Override
@@ -84,11 +99,12 @@ public class FloatingWindowService extends Service {
             LayoutInflater layoutInflater = LayoutInflater.from(this);
             floatingView = layoutInflater.inflate(R.layout.service_floating, null);
             // 直接关闭服务的按钮，调试用
-            button = floatingView.findViewById(R.id.buttonClose);
+            Button button = floatingView.findViewById(R.id.buttonClose);
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     windowManager.removeView(floatingView);
+
                     stopSelf();
                 }
             });
@@ -107,4 +123,26 @@ public class FloatingWindowService extends Service {
         }
     }
 
+
+
+    class MyBinder extends Binder{
+        @Override
+        protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException{
+            switch(code){
+                case 0x001:{
+                    data.enforceInterface("FloatingWindowService");
+                    int chosedTime = data.readInt();
+                    reply.writeNoException();
+                    reply.writeString("onTransact 0x001 ok");
+                    Log.d("Master_Floating", "Master time is " + Integer.toString(chosedTime));
+                    return true;
+                }
+            }
+            return super.onTransact(code, data, reply, flags);
+        }
+
+        public void getChosedTime(int chosedTime){
+            allTime = chosedTime;
+        }
+    }
 }
