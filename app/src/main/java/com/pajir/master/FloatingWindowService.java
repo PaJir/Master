@@ -1,10 +1,20 @@
 package com.pajir.master;
 
+import android.accessibilityservice.AccessibilityService;
+import android.app.ActivityManager;
+import android.app.Instrumentation;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.PixelFormat;
 import android.icu.text.AlphabeticIndex;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,12 +28,17 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 public class FloatingWindowService extends Service {
+    private final String TAG = "Master_Floating";
     public static boolean isStarted = false;
     // unit: second
     private static int chosedTime = 0;
@@ -44,9 +59,11 @@ public class FloatingWindowService extends Service {
     public void onCreate(){
         super.onCreate();
         isStarted = true;
-        Log.d("Master_Floating", "I am creating");
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        layoutParams = new WindowManager.LayoutParams();
+        Log.d(TAG, "I am creating");
+        if(windowManager == null)
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        if(layoutParams == null)
+            layoutParams = new WindowManager.LayoutParams();
         // 窗口类型，兼容一下老版本
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             // application一般是单例
@@ -54,7 +71,7 @@ public class FloatingWindowService extends Service {
             //layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
         }
         else{
-            // 电话窗口
+            // 老版本Android用电话窗口类型
             layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         }
         // 像素点格式
@@ -69,6 +86,7 @@ public class FloatingWindowService extends Service {
         layoutParams.alpha = 0.8f;
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
+
         // need to register a broadcast
         recordReceiver = new RecordReceiver();
         IntentFilter intentFilter = new IntentFilter();
@@ -86,13 +104,17 @@ public class FloatingWindowService extends Service {
     // unbounded Startservice() 没数据传递，实现简单
     public int onStartCommand(Intent intent, int flags, int startId){
         leftTime = chosedTime = intent.getIntExtra("chosedTime", 0);
-        Log.d("Master_Floating", "get chosedTime successfully");
+        Log.d(TAG, "get chosedTime successfully");
         onShowFloatingWindow();
         return super.onStartCommand(intent, flags, startId);
     }
 
     private void stopCurService(){
-        windowManager.removeView(floatingView);
+        if(windowManager != null)
+            windowManager.removeView(floatingView);
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getApplication().startActivity(intent);
         stopSelf();
     }
 
@@ -104,7 +126,7 @@ public class FloatingWindowService extends Service {
         // need to unregister boardcast receiver
         unregisterReceiver(recordReceiver);
         super.onDestroy();
-        Log.d("Master_Floating", "I destroy myself");
+        Log.d(TAG, "I destroy myself");
     }
 
     private void onShowFloatingWindow() {
@@ -151,9 +173,19 @@ public class FloatingWindowService extends Service {
         TextView textViewDuringTime = floatingView.findViewById(R.id.textViewDuringTime);
         textViewDuringTime.setText("Master Time: " + calDuringTime("HH:mm", chosedTime));
 
+        Button button1 = floatingView.findViewById(R.id.buttonSOS);
+        button1.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                Toast.makeText(FloatingWindowService.this, "Unavailable Now", Toast.LENGTH_SHORT).show();
+                //sos();
+            }
+        });
+
         windowManager.addView(floatingView, layoutParams);
     }
 
+    @NonNull
     private String calDuringTime(String format, int offset){
         String startTime = new SimpleDateFormat(format).format(new Date());
         SimpleDateFormat endDateFormat = new SimpleDateFormat(format);
@@ -161,5 +193,24 @@ public class FloatingWindowService extends Service {
         c.add(Calendar.SECOND, offset);
         String endTime = endDateFormat.format(c.getTime());
         return startTime + " - " + endTime;
+    }
+
+    private void sos(){
+        // 解绑就能隐藏界面
+        //windowManager.removeView(floatingView);
+        // 然后打开拨号界面
+        Log.d(TAG, "I will sos");
+        Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+"110"));
+        // 一定要加这个flag，否则无法service -> activity
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getApplication().startActivity(intent);
+        }catch(Exception e){
+            e.printStackTrace();
+            Log.d(TAG, "You(SERVICE) can't open ACTIVITY without adding flag!");
+        }
+        // 怎么再显示回来啊
+        //windowManager.addView(floatingView, layoutParams);
+
     }
 }

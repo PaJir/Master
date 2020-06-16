@@ -1,7 +1,11 @@
 package com.pajir.master;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -11,8 +15,8 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
-
-    final int OVERLAY_PERMISSION_REQ_CODE = 1;
+    private final String TAG = "Master_MainActivity";
+    private final int OVERLAY_PERMISSION_REQ_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // 可以扩展更多的功能...
         switch(requestCode){
             case OVERLAY_PERMISSION_REQ_CODE:
                 if (!Settings.canDrawOverlays(this)) {
@@ -39,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     // 开启悬浮窗，开启前会检查是否有权限
     public void startFloatingWindow(View view) {
         if (FloatingWindowService.isStarted) {
-            Log.d("Master_MainActivity", "FloatingWindowServiceStarted");
+            Log.d(TAG, "FloatingWindowServiceStarted");
             return;
         }
         if (!Settings.canDrawOverlays(this)) {
@@ -65,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     // 关闭悬浮窗，应该用不到这个
     public void stopFloatingWindowService(View view){
         if(FloatingWindowService.isStarted){
-            Log.d("Master_MainActivity", "I will stop service");
+            Log.d(TAG, "I will stop service");
             stopService(new Intent(MainActivity.this, FloatingWindowService.class));
         }
     }

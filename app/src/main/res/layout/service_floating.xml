@@ -39,13 +39,15 @@
         android:text="close it"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true" />
 
     <Button
         android:id="@+id/buttonSOS"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SOS"
+        android:text="@string/sos"
+        android:textColor="#FFFFFF"
+        android:background="#F00F0F"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"/>
 
