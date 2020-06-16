@@ -2,17 +2,21 @@ package com.pajir.master;
 
 import android.app.Service;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Gravity;
-import android.view.MotionEvent;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.TextView;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class FloatingWindowService extends Service {
     public static boolean isStarted = false;
@@ -21,11 +25,14 @@ public class FloatingWindowService extends Service {
     private WindowManager.LayoutParams layoutParams;
 
     private Button button;
+    private TextView textViewCurTime;
+    private View floatingView;
 
     @Override
     public void onCreate(){
         super.onCreate();
         isStarted = true;
+        Log.d("Master_Floating", "I am creating");
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         layoutParams = new WindowManager.LayoutParams();
         // 窗口类型，兼容一下老版本
@@ -45,65 +52,59 @@ public class FloatingWindowService extends Service {
         // FLAG_NOT_TOUCH_MODAL: 不监听窗口之外的按键，这里可有可无
         // FLAG_LAYOUT_IN_SCREEN: 允许窗口占满整个屏幕
         // FLAG_LAYOUT_NOT_FOCUSABLE: 不接受任何按键或按钮事件
-        layoutParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        layoutParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         // 窗口的透明度，用于debug
-        layoutParams.alpha = 0.5f;
+        layoutParams.alpha = 0.8f;
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
-        //layoutParams.x = 300;
-        //layoutParams.y = 300;
     }
 
     @Override
-    // bounded Bindservice()
+    // bounded Bindservice() 这个传递数据
     public IBinder onBind(Intent intent){
         return null;
     }
 
     @Override
-    // unbounded Startservice()
+    // unbounded Startservice() 没数据传递
     public int onStartCommand(Intent intent, int flags, int startId){
         onShowFloatingWindow();
         return super.onStartCommand(intent, flags, startId);
     }
 
+    @Override
+    public void onDestroy() {
+        isStarted = false;
+        super.onDestroy();
+        Log.d("Master_Floating", "I destroy myself");
+    }
+
     private void onShowFloatingWindow(){
         if(Settings.canDrawOverlays(this)){
-            button = new Button(getApplicationContext());
+            LayoutInflater layoutInflater = LayoutInflater.from(this);
+            floatingView = layoutInflater.inflate(R.layout.service_floating, null);
+            // 直接关闭服务的按钮，调试用
+            button = floatingView.findViewById(R.id.buttonClose);
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    windowManager.removeView(floatingView);
+                    stopSelf();
+                }
+            });
 
-            button.setText("Floating Window");
-            button.setBackgroundColor(Color.WHITE);
-            windowManager.addView(button, layoutParams);
-            button.setOnTouchListener(new FloatingOnTouchListener());
+            textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
+            final Handler aHandle = new Handler(getMainLooper());
+            aHandle.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                    aHandle.postDelayed(this, 1000);
+                }
+             }, 10);
+
+            windowManager.addView(floatingView, layoutParams);
         }
     }
 
-    private class FloatingOnTouchListener implements View.OnTouchListener {
-        private int x;
-        private int y;
-
-        @Override
-        public boolean onTouch(View view, MotionEvent event) {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    x = (int) event.getRawX();
-                    y = (int) event.getRawY();
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    int nowX = (int) event.getRawX();
-                    int nowY = (int) event.getRawY();
-                    int movedX = nowX - x;
-                    int movedY = nowY - y;
-                    x = nowX;
-                    y = nowY;
-                    layoutParams.x = layoutParams.x + movedX;
-                    layoutParams.y = layoutParams.y + movedY;
-                    windowManager.updateViewLayout(view, layoutParams);
-                    break;
-                default:
-                    break;
-            }
-            return false;
-        }
-    }
 }

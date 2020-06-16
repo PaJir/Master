@@ -12,3 +12,10 @@
 /captures
 .externalNativeBuild
 .cxx
+.idea/runConfigurations.xml
+.idea/codeStyles/Project.xml
+.idea/gradle.xml
+.idea/misc.xml
+.idea/vcs.xml
+app/src/androidTest/java/com/pajir/master/ExampleInstrumentedTest.java
+app/src/test/java/com/pajir/master/ExampleUnitTest.java
