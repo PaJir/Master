@@ -1,17 +1,10 @@
 package com.pajir.master;
 
-import android.accessibilityservice.AccessibilityService;
-import android.app.ActivityManager;
-import android.app.Instrumentation;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.app.usage.UsageStats;
-import android.app.usage.UsageStatsManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.PixelFormat;
 import android.icu.text.AlphabeticIndex;
 import android.net.Uri;
@@ -30,6 +23,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -42,7 +36,9 @@ public class FloatingWindowService extends Service {
     public static boolean isStarted = false;
     // unit: second
     private static int chosedTime = 0;
-    private static int leftTime = -1;
+    private static long leftTime = -1;
+    private static String startTime;
+    private static String endTime;
 
     private WindowManager windowManager;
     private WindowManager.LayoutParams layoutParams;
@@ -103,9 +99,12 @@ public class FloatingWindowService extends Service {
     @Override
     // unbounded Startservice() 没数据传递，实现简单
     public int onStartCommand(Intent intent, int flags, int startId){
+        // unit: second
         leftTime = chosedTime = intent.getIntExtra("chosedTime", 0);
+        calDuringTime(chosedTime);
         Log.d(TAG, "get chosedTime successfully");
         onShowFloatingWindow();
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -125,6 +124,8 @@ public class FloatingWindowService extends Service {
         timeHandle.removeCallbacksAndMessages(null);
         // need to unregister boardcast receiver
         unregisterReceiver(recordReceiver);
+        // need to destroy notification
+        stopForeground(true);
         super.onDestroy();
         Log.d(TAG, "I destroy myself");
     }
@@ -152,26 +153,28 @@ public class FloatingWindowService extends Service {
         timeHandle.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if(leftTime == 0){
+                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                String curTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                leftTime = calTimeDiff(endTime, curTime);
+                if(leftTime <= 0){
                     Intent intent = new Intent();
                     intent.setAction("RECORDFINISHED");
                     sendBroadcast(intent);
                     stopCurService();
-                    return;
                 }
-                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
-                leftTime -= 1;
-                textViewLeftTime.setText(Integer.toString(leftTime) + "/" + Integer.toString(chosedTime));
-                timeHandle.postDelayed(this, 1000);
-                //Log.d("Master_Floating", "I am calculating time");
+                else {
+                    textViewLeftTime.setText(Long.toString(leftTime) + "/" + Integer.toString(chosedTime));
+                    timeHandle.postDelayed(this, 1000);
+                }
+                Log.d("Master_Floating", "I am calculating time");
             }
         }, 10);
 
         TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
-        textViewAllTime.setText(Integer.toString(chosedTime / 60) + "min");
+        textViewAllTime.setText(chosedTime / 60 + "min");
 
         TextView textViewDuringTime = floatingView.findViewById(R.id.textViewDuringTime);
-        textViewDuringTime.setText("Master Time: " + calDuringTime("HH:mm", chosedTime));
+        textViewDuringTime.setText("Master Time: " + startTime.substring(11,16) + " - " + endTime.substring(11,16));
 
         Button button1 = floatingView.findViewById(R.id.buttonSOS);
         button1.setOnClickListener(new View.OnClickListener(){
@@ -185,14 +188,28 @@ public class FloatingWindowService extends Service {
         windowManager.addView(floatingView, layoutParams);
     }
 
-    @NonNull
-    private String calDuringTime(String format, int offset){
-        String startTime = new SimpleDateFormat(format).format(new Date());
+    private void calDuringTime(int offset){
+        String format = "yyyy-MM-dd HH:mm:ss";
+        startTime = new SimpleDateFormat(format).format(new Date());
         SimpleDateFormat endDateFormat = new SimpleDateFormat(format);
         Calendar c = new GregorianCalendar();
         c.add(Calendar.SECOND, offset);
-        String endTime = endDateFormat.format(c.getTime());
-        return startTime + " - " + endTime;
+        endTime = endDateFormat.format(c.getTime());
+    }
+
+    // time1 - time2
+    private long calTimeDiff(String time1, String time2){
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date d1 = null;
+        Date d2 = null;
+        try{
+            d1 = format.parse(time1);
+            d2 = format.parse(time2);
+        }catch (ParseException e){
+            e.printStackTrace();
+        }
+        long diff = d1.getTime() - d2.getTime();
+        return diff / 1000;
     }
 
     private void sos(){

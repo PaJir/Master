@@ -25,5 +25,4 @@ public class MasterDBExecutor {
         }
     }
 
-    public void insertCity()
 }
