@@ -3,8 +3,10 @@ package com.pajir.master;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.PixelFormat;
 import android.icu.text.AlphabeticIndex;
 import android.net.Uri;
@@ -87,6 +89,7 @@ public class FloatingWindowService extends Service {
         recordReceiver = new RecordReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("RECORDFINISHED");
+        intentFilter.addAction("TESTRESTART");
         registerReceiver(recordReceiver, intentFilter);
     }
 
@@ -101,6 +104,7 @@ public class FloatingWindowService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId){
         // unit: second
         leftTime = chosedTime = intent.getIntExtra("chosedTime", 0);
+        startTime = intent.getStringExtra("startTime");
         calDuringTime(chosedTime);
         Log.d(TAG, "get chosedTime successfully");
         onShowFloatingWindow();
@@ -124,8 +128,6 @@ public class FloatingWindowService extends Service {
         timeHandle.removeCallbacksAndMessages(null);
         // need to unregister boardcast receiver
         unregisterReceiver(recordReceiver);
-        // need to destroy notification
-        stopForeground(true);
         super.onDestroy();
         Log.d(TAG, "I destroy myself");
     }
@@ -138,37 +140,24 @@ public class FloatingWindowService extends Service {
         LayoutInflater layoutInflater = LayoutInflater.from(this);
         floatingView = layoutInflater.inflate(R.layout.service_floating, null);
         // 直接关闭服务的按钮，调试用
-        Button button = floatingView.findViewById(R.id.buttonClose);
+        /*Button button = floatingView.findViewById(R.id.buttonClose);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 stopCurService();
             }
         });
-
-        // 这里开线程算时间，也可以直接用DigitalClock, TextClock...
-        textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
-        textViewLeftTime = floatingView.findViewById(R.id.textViewLeftTime);
-        timeHandle = new Handler(getMainLooper());
-        timeHandle.postDelayed(new Runnable() {
+         */
+        Button button = floatingView.findViewById(R.id.buttonFresh);
+        button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
-                String curTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                leftTime = calTimeDiff(endTime, curTime);
-                if(leftTime <= 0){
-                    Intent intent = new Intent();
-                    intent.setAction("RECORDFINISHED");
-                    sendBroadcast(intent);
-                    stopCurService();
-                }
-                else {
-                    textViewLeftTime.setText(Long.toString(leftTime) + "/" + Integer.toString(chosedTime));
-                    timeHandle.postDelayed(this, 1000);
-                }
-                Log.d("Master_Floating", "I am calculating time");
+            public void onClick(View view) {
+                timeHandle.removeCallbacksAndMessages(null);
+                fresh();
             }
-        }, 10);
+        });
+
+        fresh();
 
         TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
         textViewAllTime.setText(chosedTime / 60 + "min");
@@ -188,13 +177,56 @@ public class FloatingWindowService extends Service {
         windowManager.addView(floatingView, layoutParams);
     }
 
+    private void fresh(){
+        // 这里开线程算时间，也可以直接用DigitalClock, TextClock...
+        textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
+        textViewLeftTime = floatingView.findViewById(R.id.textViewLeftTime);
+        timeHandle = new Handler(getMainLooper());
+        timeHandle.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                String curTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                leftTime = calTimeDiff(endTime, curTime);
+                if(leftTime <= 0){
+                    Intent intent = new Intent();
+                    intent.setAction("RECORDFINISHED");
+                    intent.putExtra("time_from", startTime);
+                    intent.putExtra("time_end", endTime);
+                    intent.putExtra("time_length", chosedTime / 60);
+                    sendBroadcast(intent);
+                    Log.d(TAG, "Send Broadcast");
+                    stopCurService();
+                }
+                else {
+                    textViewLeftTime.setText(Long.toString(leftTime) + "/" + Integer.toString(chosedTime));
+                    timeHandle.postDelayed(this, 1000);
+                }
+                //Log.d("Master_Floating", "I am calculating time");
+            }
+        }, 10);
+    }
+
     private void calDuringTime(int offset){
         String format = "yyyy-MM-dd HH:mm:ss";
-        startTime = new SimpleDateFormat(format).format(new Date());
         SimpleDateFormat endDateFormat = new SimpleDateFormat(format);
         Calendar c = new GregorianCalendar();
         c.add(Calendar.SECOND, offset);
         endTime = endDateFormat.format(c.getTime());
+        writeToDB();
+    }
+
+    private void writeToDB(){
+        Log.d(TAG, "I will write it to db");
+        //MasterDBHelper dbHelper = new MasterDBHelper(this);
+        MasterDBHelper dbHelper = new MasterDBHelper(this, "master.db", null, 4);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("time_from",startTime);
+        values.put("time_end",endTime);
+        values.put("time_length", chosedTime / 60);
+        db.insert("CurRecord", null, values);
+        dbHelper.close();
     }
 
     // time1 - time2

@@ -2,5 +2,7 @@
     <string name="app_name">Master</string>
     <string name="welcome">Thanks for Using Master App!</string>
     <string name="start">Master Time Now</string>
+    <string name="fresh">Fresh</string>
+    <string name="history">History</string>
     <string name="sos">SOS</string>
 </resources>

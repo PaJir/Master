@@ -4,8 +4,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,6 +17,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "Master_MainActivity";
@@ -63,8 +69,9 @@ public class MainActivity extends AppCompatActivity {
         // 传参
         Spinner spinnerTime = (Spinner) findViewById(R.id.spinnerTime);
         // 改参数，分变秒，debug时可调小
-        int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * 10;
+        int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * 60;
         bindIntent.putExtra("chosedTime", chosedTime);
+        bindIntent.putExtra("startTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         startService(bindIntent);
     }
 
@@ -74,5 +81,16 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "I will stop service");
             stopService(new Intent(MainActivity.this, FloatingWindowService.class));
         }
+    }
+
+    // 查看历史记录
+    public void checkHistory(View view){
+        Intent intent = new Intent(this, History.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 }

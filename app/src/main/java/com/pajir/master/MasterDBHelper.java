@@ -1,33 +1,52 @@
 package com.pajir.master;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class MasterDBHelper extends SQLiteOpenHelper {
+    private final String TAG = "Master_SQLHelper";
+
+    private static final String DATABASE_NAME = "master.db";
+    private static final int DATABASE_VERSION = 4;
     private Context context;
-    private final static String DB_NAME = "master.db";
-    private static final int DB_VERSION = 1;
 
-    private static final String TEXT_TYPE = " TEXT";
-    private static final String COMMA_SEP = ", ";
+    private static final String CREATE_RECORD_TABLE = "create table if not exists Record ("
+            + "id integer primary key autoincrement, "
+            + "time_from text, "
+            + "time_end text, "
+            + "time_length int)";
 
-    private static final String SQL_CREATE_RECORD_TABLE = "CREATE TABLE IF NOT EXISTS" + MasterDBContract.RecordEntry.TABLE_NAME + " (" +
-            MasterDBContract.RECORD_ID + TEXT_TYPE + COMMA_SEP + MasterDBContract.RecordEntry.TABLE_NAME + TEXT_TYPE + COMMA_SEP +
-            MasterDBContract.RecordEntry.TIME_FROM +TEXT_TYPE + COMMA_SEP + MasterDBContract.RecordEntry.TIME_LENGTH + " )";
+    // 没有bug的话，这张表只有一个数据，便于开机时读取
+    private static final String CREATE_CUR_RECORD_TABLE = "create table if not exists CurRecord ("
+            + "id integer primary key autoincrement, "
+            + "time_from text, "
+            + "time_end text, "
+            + "time_length int)";
 
     public MasterDBHelper(Context context){
-        super(context, DB_NAME, null, DB_VERSION);
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context;
+    }
+
+    public MasterDBHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version){
+        super(context, name, factory, version);
         this.context = context;
     }
 
     @Override
     public void onCreate(SQLiteDatabase db){
-        db.execSQL(SQL_CREATE_RECORD_TABLE);
+        db.execSQL(CREATE_RECORD_TABLE);
+        db.execSQL(CREATE_CUR_RECORD_TABLE);
+        Log.d(TAG, "create db successfully");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion){
-
+        //db.execSQL("drop table if exists Record");
+        Log.d(TAG, "drop db successfully");
+        onCreate(db);
     }
 }

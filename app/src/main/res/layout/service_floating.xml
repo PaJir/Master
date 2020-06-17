@@ -33,10 +33,10 @@
         android:layout_centerHorizontal="true"/>
 
     <Button
-        android:id="@+id/buttonClose"
+        android:id="@+id/buttonFresh"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="close it"
+        android:text="@string/fresh"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
