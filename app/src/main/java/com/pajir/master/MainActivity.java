@@ -1,22 +1,19 @@
 package com.pajir.master;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
-import android.Manifest;
-import android.content.ContentValues;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Spinner;
 import android.widget.Toast;
+import androidx.appcompat.widget.Toolbar;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -24,11 +21,21 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "Master_MainActivity";
     private final int OVERLAY_PERMISSION_REQ_CODE = 1;
+    private final int sec_per_min = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.main_toolbar);
+        setSupportActionBar(toolbar);
+        // 目前0是icon，1是label
+        View titleView = toolbar.getChildAt(1);
+        Toolbar.LayoutParams layoutParams = new Toolbar.LayoutParams(
+                Toolbar.LayoutParams.WRAP_CONTENT,
+                Toolbar.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        titleView.setLayoutParams(layoutParams);
     }
 
     @Override
@@ -69,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         // 传参
         Spinner spinnerTime = (Spinner) findViewById(R.id.spinnerTime);
         // 改参数，分变秒，debug时可调小
-        int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * 60;
+        int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * sec_per_min;
         bindIntent.putExtra("chosedTime", chosedTime);
         bindIntent.putExtra("startTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         startService(bindIntent);
@@ -83,14 +90,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // 查看历史记录
-    public void checkHistory(View view){
-        Intent intent = new Intent(this, History.class);
-        startActivity(intent);
-    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+    }
+
+    // 以下与Toolbar有关
+    public boolean onCreateOptionsMenu(Menu menu){
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+        switch (item.getItemId()){
+            case R.id.history:
+                // 查看历史记录
+                Intent intent1 = new Intent(this, History.class);
+                startActivity(intent1);
+                return true;
+            case R.id.about:
+                // 关于
+                Intent intent2 = new Intent(this, About.class);
+                startActivity(intent2);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

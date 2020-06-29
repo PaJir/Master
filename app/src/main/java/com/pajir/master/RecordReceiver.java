@@ -41,9 +41,12 @@ public class RecordReceiver extends BroadcastReceiver {
             db.delete("CurRecord", "id >= ?", new String[] {"0"});
             dbHelper.close();
         }
-        else if(intent.getAction().equals("android.intent.action.BOOT_COMPLETED")){
+        else if(intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)){
             Log.d("TAG", "reboot");
             restart = new Restart();
+        }
+        else if(intent.getAction().equals(Intent.ACTION_AIRPLANE_MODE_CHANGED)){
+            Toast.makeText(context, "airplane mode changed", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -1,58 +1,70 @@
 package com.pajir.master;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 public class History extends AppCompatActivity {
-    private final String TAG = "Master_History";
+    private static final String TAG = "History";
 
     //private MasterDBHelper dbHelper = new MasterDBHelper(this, "master.db", null, 2);
     private MasterDBHelper dbHelper = new MasterDBHelper(this);
 
     private ArrayList<HashMap<String, String>> recordList = new ArrayList<>();
 
+
+    private ArrayList<Integer> mHistoryId = new ArrayList<>();
+    private ArrayList<String> mHistoryDuring = new ArrayList<>();
+    private ArrayList<Integer> mHistorySum = new ArrayList<>();
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
 
-        Log.d(TAG, "I will read database master");
-        displayListView();
+        Log.d(TAG, "I will read database master and display");
+        initData();
+        initRecyclerView();
     }
 
-    private void displayListView(){
-        ListView listView = (ListView) findViewById(R.id.listViewRecord);
+    private void initData(){
+        Log.d(TAG, "initData: from database");
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor cursor = db.query("Record", null, null, null, null, null, null);
         if(cursor.moveToFirst()){
+            int i = 1;
             do{
                 String time_from = cursor.getString(cursor.getColumnIndexOrThrow("time_from"));
                 String time_end = cursor.getString(cursor.getColumnIndexOrThrow("time_end"));
                 int time_length = cursor.getInt(cursor.getColumnIndexOrThrow("time_length"));
-                HashMap<String, String> hashMap = new HashMap<>();
-                hashMap.put("re", time_from + " - " + time_end + ", the duration is " + time_length + " min");
-                recordList.add(hashMap);
+                mHistoryId.add(i);
+                mHistoryDuring.add(time_from + " ~ " + time_end);
+                mHistorySum.add(time_length);
+                i += 1;
             } while(cursor.moveToNext());
         }
         cursor.close();
+        db.close();
+    }
 
-        Log.d(TAG, "I will read database master7");
-        String[] from = {"re"};
-        int[] value = {R.id.textViewRecord};
-        SimpleAdapter simpleAdapter = new SimpleAdapter(this, recordList, R.layout.record_item, from, value);
-        listView.setAdapter(simpleAdapter);
+    private void initRecyclerView(){
+        Log.d(TAG, "initRecyclerView: init RecyclerView");
+        RecyclerView recyclerView = findViewById(R.id.recycler_view_history);
+        RecyclerView.Adapter adapter = new RecyclerViewAdapter(this, mHistoryId, mHistoryDuring, mHistorySum);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        Log.d(TAG, "initRecyclerView: init finished");
     }
 
     @Override

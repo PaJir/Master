@@ -32,9 +32,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 
 public class FloatingWindowService extends Service {
     private final String TAG = "Master_Floating";
+    private final int sec_per_min = 10;
     public static boolean isStarted = false;
     // unit: second
     private static int chosedTime = 0;
@@ -81,7 +83,7 @@ public class FloatingWindowService extends Service {
         // FLAG_LAYOUT_NOT_FOCUSABLE: 不接受任何按键或按钮事件
         layoutParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         // 窗口的透明度，用于debug
-        layoutParams.alpha = 0.8f;
+        //layoutParams.alpha = 0.8f;
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
 
@@ -160,11 +162,9 @@ public class FloatingWindowService extends Service {
         fresh();
 
         TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
-        textViewAllTime.setText(chosedTime / 60 + "min");
-
+        textViewAllTime.setText(String.format(Locale.CHINA, "%dmin", chosedTime/sec_per_min));
         TextView textViewDuringTime = floatingView.findViewById(R.id.textViewDuringTime);
-        textViewDuringTime.setText("Master Time: " + startTime.substring(11,16) + " - " + endTime.substring(11,16));
-
+        textViewDuringTime.setText(String.format(Locale.CHINA, "Master Time: %s - %s", startTime.substring(11, 16), endTime.substring(11, 16)));
         Button button1 = floatingView.findViewById(R.id.buttonSOS);
         button1.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -193,13 +193,13 @@ public class FloatingWindowService extends Service {
                     intent.setAction("RECORDFINISHED");
                     intent.putExtra("time_from", startTime);
                     intent.putExtra("time_end", endTime);
-                    intent.putExtra("time_length", chosedTime / 60);
+                    intent.putExtra("time_length", chosedTime / sec_per_min);
                     sendBroadcast(intent);
                     Log.d(TAG, "Send Broadcast");
                     stopCurService();
                 }
                 else {
-                    textViewLeftTime.setText(Long.toString(leftTime) + "/" + Integer.toString(chosedTime));
+                    textViewLeftTime.setText(String.format(Locale.CHINA, "%d/%d", leftTime, chosedTime));
                     timeHandle.postDelayed(this, 1000);
                 }
                 //Log.d("Master_Floating", "I am calculating time");
@@ -224,7 +224,7 @@ public class FloatingWindowService extends Service {
         ContentValues values = new ContentValues();
         values.put("time_from",startTime);
         values.put("time_end",endTime);
-        values.put("time_length", chosedTime / 60);
+        values.put("time_length", chosedTime / sec_per_min);
         db.insert("CurRecord", null, values);
         dbHelper.close();
     }
@@ -246,7 +246,7 @@ public class FloatingWindowService extends Service {
 
     private void sos(){
         // 解绑就能隐藏界面
-        //windowManager.removeView(floatingView);
+        windowManager.removeView(floatingView);
         // 然后打开拨号界面
         Log.d(TAG, "I will sos");
         Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:"+"110"));

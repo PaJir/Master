@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp"
+    android:id="@+id/hi_layout">
+
+    <TextView
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/textview_history_id"
+        android:textSize="35sp"
+        android:text="1"
+        android:textColor="#888888"
+        android:gravity="center_horizontal"
+        android:layout_centerVertical="true"/>
+
+    <TextView
+        android:id="@+id/textview_history_during_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:text="from time to time"
+        android:layout_toRightOf="@id/textview_history_id"/>
+
+    <TextView
+        android:id="@+id/textview_history_sum_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="25sp"
+        android:text="1分钟"
+        android:textColor="#444444"
+        android:layout_below="@id/textview_history_during_time"
+        android:layout_toRightOf="@id/textview_history_id"/>
+
+</RelativeLayout>
