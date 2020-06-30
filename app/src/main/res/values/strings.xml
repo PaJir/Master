@@ -1,9 +1,10 @@
 <resources>
     <string name="app_name">Master</string>
     <string name="about">关于</string>
-    <string name="about_content">感谢使用Master\n版本：0.0.7</string>
+    <string name="about_content">感谢使用Master\n版本：1.0.8</string>
     <string name="start">开始</string>
     <string name="fresh">刷新</string>
     <string name="history">历史记录</string>
+    <string name="minute">分钟</string>
     <string name="sos">紧急呼叫</string>
 </resources>

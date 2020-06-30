@@ -1,11 +1,19 @@
 package com.pajir.master;
 
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.PixelFormat;
 import android.icu.text.AlphabeticIndex;
@@ -35,7 +43,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class FloatingWindowService extends Service {
-    private final String TAG = "Master_Floating";
+    private static final String TAG = "FloatingWindowService_Master";
     private final int sec_per_min = 10;
     public static boolean isStarted = false;
     // unit: second
@@ -53,7 +61,7 @@ public class FloatingWindowService extends Service {
 
     private Handler timeHandle;
 
-    private RecordReceiver recordReceiver;
+    private BroadcastReceiver broadcastReceiver;
 
     @Override
     public void onCreate(){
@@ -83,16 +91,31 @@ public class FloatingWindowService extends Service {
         // FLAG_LAYOUT_NOT_FOCUSABLE: 不接受任何按键或按钮事件
         layoutParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         // 窗口的透明度，用于debug
-        //layoutParams.alpha = 0.8f;
+        layoutParams.alpha = 0.8f;
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
 
         // need to register a broadcast
-        recordReceiver = new RecordReceiver();
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "onReceive: switch");
+                switch(intent.getAction()){
+                    case Intent.ACTION_SCREEN_ON:
+                        Log.d(TAG, "onReceive: ACTION_SCREEN_ON detected");
+                        //timeHandle.removeCallbacksAndMessages(null);
+                        fresh();
+                        break;
+                    case Intent.ACTION_SCREEN_OFF:
+                        Log.d(TAG, "onReceive: ACTION_SCREEN_OFF detected");
+                        timeHandle.removeCallbacksAndMessages(null);
+                }
+            }
+        };
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("RECORDFINISHED");
-        intentFilter.addAction("TESTRESTART");
-        registerReceiver(recordReceiver, intentFilter);
+        intentFilter.addAction(Intent.ACTION_SCREEN_ON);
+        intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        registerReceiver(broadcastReceiver, intentFilter);
     }
 
     @Override
@@ -119,6 +142,7 @@ public class FloatingWindowService extends Service {
             windowManager.removeView(floatingView);
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         getApplication().startActivity(intent);
         stopSelf();
     }
@@ -129,9 +153,9 @@ public class FloatingWindowService extends Service {
         // need to destroy this thread
         timeHandle.removeCallbacksAndMessages(null);
         // need to unregister boardcast receiver
-        unregisterReceiver(recordReceiver);
+        unregisterReceiver(broadcastReceiver);
         super.onDestroy();
-        Log.d(TAG, "I destroy myself");
+        Log.d(TAG, "onDestroy: I destroy myself");
     }
 
     private void onShowFloatingWindow() {
@@ -142,23 +166,14 @@ public class FloatingWindowService extends Service {
         LayoutInflater layoutInflater = LayoutInflater.from(this);
         floatingView = layoutInflater.inflate(R.layout.service_floating, null);
         // 直接关闭服务的按钮，调试用
-        /*Button button = floatingView.findViewById(R.id.buttonClose);
-        button.setOnClickListener(new View.OnClickListener() {
+        Button buttonClose = floatingView.findViewById(R.id.buttonClose);
+        buttonClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 stopCurService();
             }
         });
-         */
-        Button button = floatingView.findViewById(R.id.buttonFresh);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                timeHandle.removeCallbacksAndMessages(null);
-                fresh();
-            }
-        });
-
+         //*/
         fresh();
 
         TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
@@ -177,56 +192,13 @@ public class FloatingWindowService extends Service {
         windowManager.addView(floatingView, layoutParams);
     }
 
-    private void fresh(){
-        // 这里开线程算时间，也可以直接用DigitalClock, TextClock...
-        textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
-        textViewLeftTime = floatingView.findViewById(R.id.textViewLeftTime);
-        timeHandle = new Handler(getMainLooper());
-        timeHandle.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
-                String curTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                leftTime = calTimeDiff(endTime, curTime);
-                if(leftTime <= 0){
-                    Intent intent = new Intent();
-                    intent.setAction("RECORDFINISHED");
-                    intent.putExtra("time_from", startTime);
-                    intent.putExtra("time_end", endTime);
-                    intent.putExtra("time_length", chosedTime / sec_per_min);
-                    sendBroadcast(intent);
-                    Log.d(TAG, "Send Broadcast");
-                    stopCurService();
-                }
-                else {
-                    textViewLeftTime.setText(String.format(Locale.CHINA, "%d/%d", leftTime, chosedTime));
-                    timeHandle.postDelayed(this, 1000);
-                }
-                //Log.d("Master_Floating", "I am calculating time");
-            }
-        }, 10);
-    }
-
     private void calDuringTime(int offset){
         String format = "yyyy-MM-dd HH:mm:ss";
         SimpleDateFormat endDateFormat = new SimpleDateFormat(format);
         Calendar c = new GregorianCalendar();
         c.add(Calendar.SECOND, offset);
         endTime = endDateFormat.format(c.getTime());
-        writeToDB();
-    }
-
-    private void writeToDB(){
-        Log.d(TAG, "I will write it to db");
-        //MasterDBHelper dbHelper = new MasterDBHelper(this);
-        MasterDBHelper dbHelper = new MasterDBHelper(this, "master.db", null, 4);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("time_from",startTime);
-        values.put("time_end",endTime);
-        values.put("time_length", chosedTime / sec_per_min);
-        db.insert("CurRecord", null, values);
-        dbHelper.close();
+        writeCurtoDB();
     }
 
     // time1 - time2
@@ -242,6 +214,60 @@ public class FloatingWindowService extends Service {
         }
         long diff = d1.getTime() - d2.getTime();
         return diff / 1000;
+    }
+
+    private void fresh(){
+        // 这里开线程算时间，也可以直接用DigitalClock, TextClock...
+        textViewCurTime = floatingView.findViewById(R.id.textViewCurTime);
+        textViewLeftTime = floatingView.findViewById(R.id.textViewLeftTime);
+        timeHandle = new Handler(getMainLooper());
+        timeHandle.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                textViewCurTime.setText(new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                String curTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                leftTime = calTimeDiff(endTime, curTime);
+                if(leftTime <= 0){
+                    writeRecordtoDB();
+                    stopCurService();
+                }
+                else {
+                    textViewLeftTime.setText(String.format(Locale.CHINA, "%d/%d", leftTime, chosedTime));
+                    Log.d(TAG, "run: fresh");
+                    timeHandle.postDelayed(this, 1000);
+                }
+                //Log.d("Master_Floating", "I am calculating time");
+            }
+        }, 10);
+    }
+
+    private void writeCurtoDB(){
+        Log.d(TAG, "I will write it to db");
+        //MasterDBHelper dbHelper = new MasterDBHelper(this);
+        MasterDBHelper dbHelper = new MasterDBHelper(this, "master.db", null, 4);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("time_from",startTime);
+        values.put("time_end",endTime);
+        values.put("time_length", chosedTime / sec_per_min);
+        db.insert("CurRecord", null, values);
+        dbHelper.close();
+    }
+
+    private void writeRecordtoDB(){
+        MasterDBHelper dbHelper = new MasterDBHelper(this, "master.db", null, 4);
+        Toast.makeText(this, "恭喜完成！你真棒！", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "recerive record finished");
+        //MasterDBHelper dbHelper = new MasterDBHelper(context, "master.db", null, 3);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("time_from", startTime);
+        values.put("time_end", endTime);
+        values.put("time_length",chosedTime / sec_per_min);
+        db.insert("Record", null, values);
+
+        db.delete("CurRecord", "id >= ?", new String[] {"0"});
+        dbHelper.close();
     }
 
     private void sos(){
@@ -262,4 +288,5 @@ public class FloatingWindowService extends Service {
         //windowManager.addView(floatingView, layoutParams);
 
     }
+
 }

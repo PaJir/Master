@@ -9,37 +9,33 @@
         android:id="@+id/textViewCurTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"/>
+        android:layout_centerInParent="true"
+        android:text="11:11:12"/>
 
     <TextView
         android:id="@+id/textViewAllTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/textViewCurTime"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:text="alllllll time"/>
 
     <TextView
         android:id="@+id/textViewLeftTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/textViewAllTime"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:text="LLLLLeft time"/>
 
     <TextView
         android:id="@+id/textViewDuringTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/textViewLeftTime"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        android:text="from time to time"/>
 
-    <Button
-        android:id="@+id/buttonFresh"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/fresh"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
 
     <Button
         android:id="@+id/buttonSOS"
@@ -50,5 +46,16 @@
         android:background="#F00F0F"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:id="@+id/buttonClose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="close"
+        android:textColor="#FFFFFF"
+        android:background="#F00F0F"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

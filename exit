@@ -1,0 +1,79 @@
+[33mcommit aafe9be00c67cd7118dbebe066c3d0d869c06123[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31mgithub/master[m[33m)[m
+Author: email <pajirsp@gmail.com>
+Date:   Tue Jun 30 00:14:50 2020 +0800
+
+    1.0.7
+    
+    1. 界面大改进，自定义Toolbar
+    2. 使用RecyclerView显示历史记录
+    3. 优化代码风格，如使用String.format显示字符串，使用logt/logd
+    4. 添加“关于”页面
+
+[33mcommit 0b61c759a145311022222d9e41f034393799f996[m[33m ([m[1;31morigin/master[m[33m)[m
+Author: email <pajirsp@gmail.com>
+Date:   Wed Jun 17 14:44:54 2020 +0800
+
+    1.0.6
+    
+    数据库保存历史记录，用户可以看到。
+    将当前运行信息也存储到数据库中了。
+    重启没做完，居然接收不到BOOT。
+
+[33mcommit f5681f1dc9530dc092c8c447dece209ff606adb9[m
+Author: email <pajirsp@gmail.com>
+Date:   Wed Jun 17 10:22:02 2020 +0800
+
+    1.0.5
+    
+    1. 防止被系统优化-半。开启前端服务，实测：不要也行，开启前端服务的话，没法用。
+    2. 修复锁屏后计时器暂停bug-半，更换方案，每秒都算时间。一段时间后就会onDestroy。
+
+[33mcommit 2023dbbc3257b58900bafed9de0ef806b1461e6f[m
+Author: email <pajirsp@gmail.com>
+Date:   Wed Jun 17 00:41:56 2020 +0800
+
+    1.0.4
+    
+    已实现：
+    已更换图标；
+    到点后能打开被转入后台的主页面。
+    半成品：
+    具备SOS功能，但是页面跳转不行，不提供该功能给用户；
+    数据库写了一半，记录历史，后面很多都需要数据库。
+    待开发：
+    1防止被系统杀掉；
+    2关机重启；
+    3托管通知；
+    4关闭提醒更加人性化，需输入密码；
+    5联网功能；
+    6优化显示。
+
+[33mcommit c425b8e01c0a4f19111b1f28d94c1e65d6fe07ce[m
+Author: email <pajirsp@gmail.com>
+Date:   Tue Jun 16 16:16:36 2020 +0800
+
+    1.0.3
+    
+    能显示总时间、剩余时间（秒）和时间范围。到点后自动关闭，并发送一个通知。下一步：做图标，做SOS和关闭前输入密码。
+
+[33mcommit 498112f5f4b080ab2ed8d8c2a5183f5af83e99e3[m
+Author: email <pajirsp@gmail.com>
+Date:   Tue Jun 16 13:31:58 2020 +0800
+
+    1.0.2
+    
+    用绑定的方法生成服务，最后发现还要onUnbind才能Destroy。就当个教训，其实不用bind也行。
+
+[33mcommit 9ebb94721d7a4e29dcb705c2aef91883bf620b73[m
+Author: email <pajirsp@gmail.com>
+Date:   Tue Jun 16 10:12:42 2020 +0800
+
+    1.0.1
+    
+    昨晚的版本是1.0.0，只能打开一个悬浮窗。现在是1.0.1，将悬浮窗绑定到一个xml，加了两个背景和一些文字，能选择时长，能显示时钟。还没绑定服务，也没处理用户关闭方式。
+
+[33mcommit 5d54d96b7ede2e141297818d5029a7edc0d01037[m
+Author: email <pajirsp@gmail.com>
+Date:   Mon Jun 15 23:32:59 2020 +0800
+
+    Initial commit

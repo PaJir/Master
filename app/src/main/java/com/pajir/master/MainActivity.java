@@ -2,24 +2,33 @@ package com.pajir.master;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Spinner;
 import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.ViewCompat;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
-    private final String TAG = "Master_MainActivity";
+    private static final String TAG = "MainActivity_Master";
     private final int OVERLAY_PERMISSION_REQ_CODE = 1;
     private final int sec_per_min = 10;
 
@@ -37,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
                 Toolbar.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         titleView.setLayoutParams(layoutParams);
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -94,9 +104,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "onDestroy: I destroy myself");
     }
 
-    // 以下与Toolbar有关
+    // 以下两个与Toolbar有关
     public boolean onCreateOptionsMenu(Menu menu){
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
@@ -118,4 +129,5 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
 }
