@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
@@ -23,6 +24,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.NotificationCompat;
 
 import java.text.ParseException;
@@ -163,16 +166,6 @@ public class FloatingWindowService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void stopCurService(){
-        if(windowManager != null)
-            windowManager.removeView(floatingView);
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        getApplication().startActivity(intent);
-        stopSelf();
-    }
-
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy: I destroy myself");
@@ -181,6 +174,14 @@ public class FloatingWindowService extends Service {
         timeHandle.removeCallbacksAndMessages(null);
         // need to unregister boardcast receiver
         unregisterReceiver(broadcastReceiver);
+
+        if(windowManager != null)
+            windowManager.removeView(floatingView);
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        getApplication().startActivity(intent);
+
         stopForeground(true);
         super.onDestroy();
     }
@@ -202,6 +203,15 @@ public class FloatingWindowService extends Service {
             }
         });
         // */
+        Button buttonGiveup = floatingView.findViewById((R.id.buttonGiveup));
+        buttonGiveup.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                // 验证身份
+                biometricAuth();
+            }
+        });
+
         fresh();
 
         TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
@@ -209,14 +219,6 @@ public class FloatingWindowService extends Service {
         Log.d(TAG, "onShowFloatingWindow: "+chosedTime / getResources().getInteger(R.integer.sec_per_min));
         TextView textViewDuringTime = floatingView.findViewById(R.id.textViewDuringTime);
         textViewDuringTime.setText(String.format(Locale.CHINA, "%s - %s", startTime.substring(11, 16), endTime.substring(11, 16)));
-        Button button1 = floatingView.findViewById(R.id.buttonSOS);
-        button1.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view){
-                Toast.makeText(FloatingWindowService.this, "Unavailable Now", Toast.LENGTH_SHORT).show();
-                //sos();
-            }
-        });
 
         windowManager.addView(floatingView, layoutParams);
     }
@@ -266,11 +268,11 @@ public class FloatingWindowService extends Service {
                 leftTime = calTimeDiff(endTime, curTime);
                 if(leftTime <= 0){
                     writeRecordtoDB();
-                    stopCurService();
+                    stopSelf();
                 }
                 else {
                     textViewLeftTime.setText(String.format(Locale.CHINA, "%d", leftTime));
-                    Log.d(TAG, "run: fresh");
+                    //Log.d(TAG, "run: fresh");
                     timeHandle.postDelayed(this, 1000);
                 }
                 //Log.d("Master_Floating", "I am calculating time");
@@ -314,6 +316,7 @@ public class FloatingWindowService extends Service {
         dbHelper.close();
     }
 
+    // 拨打电话，弃
     private void sos(){
         // 解绑就能隐藏界面
         windowManager.removeView(floatingView);
@@ -330,6 +333,17 @@ public class FloatingWindowService extends Service {
         }
         // 怎么再显示回来啊
         //windowManager.addView(floatingView, layoutParams);
+    }
 
+    private void biometricAuth() {
+        Log.d(TAG, "biometricAuth: I will identify you");
+        Intent intent = new Intent(FloatingWindowService.this, BiometicAuthority.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getApplication().startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(TAG, "biometricAuth: start activity failed");
+        }
     }
 }

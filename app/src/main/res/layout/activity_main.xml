@@ -13,7 +13,7 @@
         android:id="@+id/main_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#0174d5"
+        android:background="@color/colorPrimary"
         toolbar:logo="@mipmap/ic_launcher"
         android:elevation="4dp"/>
 
