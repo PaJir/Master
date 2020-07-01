@@ -3,25 +3,17 @@ package com.pajir.master;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class History extends AppCompatActivity {
     private static final String TAG = "History";
 
     //private MasterDBHelper dbHelper = new MasterDBHelper(this, "master.db", null, 2);
     private MasterDBHelper dbHelper = new MasterDBHelper(this);
-
-    private ArrayList<HashMap<String, String>> recordList = new ArrayList<>();
-
 
     private ArrayList<Integer> mHistoryId = new ArrayList<>();
     private ArrayList<String> mHistoryDuring = new ArrayList<>();
@@ -49,7 +41,7 @@ public class History extends AppCompatActivity {
                 String time_end = cursor.getString(cursor.getColumnIndexOrThrow("time_end"));
                 int time_length = cursor.getInt(cursor.getColumnIndexOrThrow("time_length"));
                 mHistoryId.add(i);
-                mHistoryDuring.add(time_from + " ~ " + time_end);
+                mHistoryDuring.add(time_from + " _\n" + time_end);
                 mHistorySum.add(time_length);
                 i += 1;
             } while(cursor.moveToNext());
