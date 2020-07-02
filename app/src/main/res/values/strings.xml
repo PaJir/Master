@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Master</string>
     <string name="about">关于</string>
-    <string name="about_content">感谢使用Master\n版本 1.2.1\n联系方式：pajirsp@gmail.com\n感谢 Bmob后端云</string>
+    <string name="about_content">感谢使用Master\n托管一下 手机变砖\n版本 1.2.2\n联系方式：pajirsp@gmail.com\n感谢 Bmob后端云</string>
     <string name="close">关闭</string>
     <string name="fresh">刷新</string>
     <string name="giveup">放弃（需要指纹识别）</string>
@@ -13,7 +13,7 @@
     <string name="online_suffix">人在线</string>
     <string name="openRoom">创建房间</string>
     <string name="openOk">确认创建</string>
-    <string name="openInfo">*提醒对方于一分钟内加入吧</string>
+    <string name="openInfo">*创建前提醒对方加入吧</string>
     <string name="enterRoom">加入房间</string>
     <string name="enterOk">确认加入</string>
     <string name="idHint">输入房间号</string>

@@ -8,8 +8,8 @@ android {
         // 本来最低23，要用Bmob的话，被迫设置为26
         minSdkVersion 26
         targetSdkVersion 29
-        versionCode 121
-        versionName "1.2.1"
+        versionCode 122
+        versionName "1.2.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

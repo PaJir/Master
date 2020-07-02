@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * getResources().getInteger(R.integer.sec_per_min);
         intent.putExtra("chosedTime", chosedTime);
         intent.putExtra("startTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA).format(new Date()));
+        intent.putExtra("objectId", (String)null);
         startActivity(intent);
     }
 

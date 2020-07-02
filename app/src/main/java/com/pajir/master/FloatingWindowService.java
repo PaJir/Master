@@ -238,13 +238,14 @@ public class FloatingWindowService extends Service {
 
         fresh();
         textViewOnline = floatingView.findViewById(R.id.textViewOnline);
-        LinearLayout.LayoutParams layoutParamsOnline = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        LinearLayout.LayoutParams layoutParamsOnline = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        Log.d(TAG, "onShowFloatingWindow: check objectId " + objectId);
         if (objectId != null) {
             pullOnlineSum();
-            layoutParamsOnline.weight = 1;
+            layoutParamsOnline.height = LinearLayout.LayoutParams.WRAP_CONTENT;
         }
         else{
-            layoutParamsOnline.weight = 0;
+            layoutParamsOnline.height = 0;
         }
         textViewOnline.setLayoutParams(layoutParamsOnline);
 
@@ -340,7 +341,8 @@ public class FloatingWindowService extends Service {
                         }
                     }
                 });
-                pullHandle.postDelayed(this, 1000);
+                // 5 秒拉一次哦
+                pullHandle.postDelayed(this, 5000);
             }
         }, 10);
 

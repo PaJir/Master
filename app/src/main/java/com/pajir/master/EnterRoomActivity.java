@@ -94,7 +94,7 @@ public class EnterRoomActivity extends AppCompatActivity {
             return false;
         }
         long diff = curDate.getTime() - startDate.getTime();
-        return diff < 60000;
+        return diff < 65000;
     }
 
     private void enterRoom(BmobContact bmobContact){
