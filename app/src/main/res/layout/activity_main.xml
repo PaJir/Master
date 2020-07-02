@@ -40,12 +40,42 @@
         android:layout_height="100dp"
         android:layout_below="@id/spinnerTime"
         android:background="@drawable/button_main_start"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:onClick="startOpenFloating"
+        android:text="@string/start"
+        android:textSize="25sp"
+        android:textColor="#7c7c7c"/>
+
+    <Button
+        android:id="@+id/buttonOpenRoom"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@id/buttonOpenMaster"
+        android:background="@drawable/button_main_start"
+        android:layout_marginTop="50dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:onClick="openRoom"
+        android:text="@string/openRoom"
+        android:textSize="25sp"
+        android:textColor="#7c7c7c" />
+
+    <Button
+        android:id="@+id/buttonEnterRoom"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@id/buttonOpenRoom"
+        android:background="@drawable/button_main_start"
         android:layout_marginTop="25dp"
         android:layout_marginBottom="5dp"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:onClick="startFloatingWindow"
-        android:text="@string/start"
+        android:onClick="enterRoom"
+        android:text="@string/enterRoom"
         android:textSize="25sp"
         android:textColor="#7c7c7c"/>
 

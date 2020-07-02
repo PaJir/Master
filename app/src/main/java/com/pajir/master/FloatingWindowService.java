@@ -179,7 +179,7 @@ public class FloatingWindowService extends Service {
             windowManager.removeView(floatingView);
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         getApplication().startActivity(intent);
 
         stopForeground(true);

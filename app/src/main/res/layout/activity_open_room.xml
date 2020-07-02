@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:toolbar="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#f0f0f0"
+    tools:context=".OpenRoomActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/open_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        toolbar:logo="@mipmap/ic_launcher"
+        android:elevation="4dp"/>
+
+    <EditText
+        android:id="@+id/editTextOpenId"
+        android:layout_width="125dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/open_toolbar"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:hint="@string/idHint"
+        android:selectAllOnFocus="true"
+        android:inputType="number"
+        android:singleLine="true"
+        android:importantForAutofill="no"/>
+
+    <Button
+        android:id="@+id/buttonOpenRoom"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@id/editTextOpenId"
+        android:background="@drawable/button_main_start"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:onClick="openRoom"
+        android:text="@string/enterOk"
+        android:textSize="25sp"
+        android:textColor="#7c7c7c"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/buttonOpenRoom"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:text="@string/openInfo" />
+</RelativeLayout>

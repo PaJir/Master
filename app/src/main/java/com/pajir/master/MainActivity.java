@@ -1,34 +1,36 @@
 package com.pajir.master;
 
-import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Spinner;
-import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import cn.bmob.v3.Bmob;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity_Master";
-    private final int OVERLAY_PERMISSION_REQ_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Bmob.initialize(this, "5df6f4b28e986d7c9802c9e73bcb61f9");
+        Log.d(TAG, "onCreate: init bmob ok");
 
         setToolbar();
         checkCurTime();
@@ -70,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 检查当前是否正处于Master time 中
-    private boolean checkCurTime(){
+    private void checkCurTime(){
         Log.d(TAG, "checkCurTime: whether it is in Master time");
         MasterDBHelper dbHelper = new MasterDBHelper(this);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -96,75 +98,24 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 startService(intent);
             }
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // 可以扩展更多的功能...
-        switch(requestCode){
-            case OVERLAY_PERMISSION_REQ_CODE:
-                if (!Settings.canDrawOverlays(this)) {
-                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
-                } else {
-                    //Toast.makeText(this, "Permission allowed", Toast.LENGTH_SHORT).show();
-                    startFloatingWindowService();
-                    }
-                break;
-            default:
-                super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    // 开启悬浮窗之前，检查是否有权限
-    public void startFloatingWindow(View view) {
-        if (FloatingWindowService.isStarted) {
-            Log.d(TAG, "FloatingWindowServiceStarted");
-            return;
-        }
-        if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
-            startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + MainActivity.this.getPackageName())), OVERLAY_PERMISSION_REQ_CODE);
-        }
-        else{
-            startFloatingWindowService();
-        }
-    }
-
-    // 开启悬浮窗前台服务
-    private void startFloatingWindowService(){
-        // 这一步可能没必要，不过防止出现意外（没发现的bug）
-        if(checkCurTime()){
-            return;
-        }
-        // 这个是不绑定的方法
-        Intent intent = new Intent(this, FloatingWindowService.class);
+    public void startOpenFloating(View view){
+        Intent intent = new Intent(this, OpenFloatingService.class);
         // 传参
-        Spinner spinnerTime = (Spinner) findViewById(R.id.spinnerTime);
+        Spinner spinnerTime = findViewById(R.id.spinnerTime);
         int chosedTime = Integer.parseInt(spinnerTime.getSelectedItem().toString()) * getResources().getInteger(R.integer.sec_per_min);
         intent.putExtra("chosedTime", chosedTime);
         intent.putExtra("startTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA).format(new Date()));
-        Log.d(TAG, "startFloatingWindowService: "+chosedTime);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
-        }
+        startActivity(intent);
     }
 
-    // 关闭悬浮窗，应该用不到这个
-    public void stopFloatingWindowService(View view){
-        if(FloatingWindowService.isStarted){
-            Log.d(TAG, "I will stop service");
-            stopService(new Intent(MainActivity.this, FloatingWindowService.class));
-        }
+    public void openRoom(View view){
+        startActivity(new Intent(this, OpenRoomActivity.class));
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy: I destroy myself");
+    public void enterRoom(View view){
+        startActivity(new Intent(this, EnterRoomActivity.class));
     }
 }
