@@ -8,11 +8,10 @@
     tools:context=".History">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/main_toolbar"
+        android:id="@+id/history_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#0174d5"
-        toolbar:logo="@mipmap/ic_launcher"
+        android:background="@color/colorPrimary"
         android:elevation="4dp"/>
 
     <androidx.recyclerview.widget.RecyclerView

@@ -4,19 +4,33 @@ import cn.bmob.v3.BmobObject;
 
 public class BmobContact extends BmobObject {
     private static final String TAG = "BmobContact_Master";
-    private String name;
-    private String address;
+    private int roomId;
+    private String startTime;
+    private int length;
+    private int onlineSum;
 
-    public String getName() {
-        return name;
+    public int getId() {
+        return roomId;
     }
-    public void setName(String name) {
-        this.name = name;
+    public void setRoomId(int roomId){
+        this.roomId = roomId;
     }
-    public String getAddress() {
-        return address;
+    public String getStartTime(){
+        return startTime;
     }
-    public void setAddress(String address) {
-        this.address = address;
+    public void setStartTime(String startTime){
+        this.startTime = startTime;
+    }
+    public int getLength(){
+        return length;
+    }
+    public void setLength(int length){
+        this.length = length;
+    }
+    public int getOnlineSum(){
+        return onlineSum;
+    }
+    public void setOnlineSum(int onlineSum){
+        this.onlineSum = onlineSum;
     }
 }

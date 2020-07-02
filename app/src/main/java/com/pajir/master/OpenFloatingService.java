@@ -22,6 +22,7 @@ public class OpenFloatingService extends AppCompatActivity {
 
     private static int chosedTime;
     private static String startTime;
+    private static String objectId = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +30,7 @@ public class OpenFloatingService extends AppCompatActivity {
         Intent intent = getIntent();
         chosedTime = intent.getIntExtra("chosedTime", 0);
         startTime = intent.getStringExtra("startTime");
+        objectId = intent.getStringExtra("objectId");
         checkAndStart();
     }
 
@@ -68,6 +70,7 @@ public class OpenFloatingService extends AppCompatActivity {
         // 传参
         intent.putExtra("chosedTime", chosedTime);
         intent.putExtra("startTime", startTime);
+        intent.putExtra("objectId", objectId);
         Log.d(TAG, "startFloatingWindowService: "+chosedTime);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent);

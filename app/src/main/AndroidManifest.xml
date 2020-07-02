@@ -30,21 +30,17 @@
 
         <activity
             android:name=".EnterRoomActivity"
-            android:icon="@mipmap/ic_launcher"
             android:label="@string/enterRoom" />
         <activity
             android:name=".OpenRoomActivity"
-            android:icon="@mipmap/ic_launcher"
             android:label="@string/openRoom" />
         <activity android:name=".BiometicAuthority" />
         <activity android:name=".OpenFloatingService"></activity>
         <activity
             android:name=".About"
-            android:icon="@mipmap/ic_launcher"
             android:label="@string/about" />
         <activity
             android:name=".History"
-            android:icon="@mipmap/ic_launcher"
             android:label="@string/history"
             android:parentActivityName=".MainActivity" />
         <activity

@@ -1,12 +1,16 @@
 package com.pajir.master;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+
 import java.util.ArrayList;
 
 public class History extends AppCompatActivity {
@@ -28,6 +32,20 @@ public class History extends AppCompatActivity {
         Log.d(TAG, "I will read database master and display");
         initData();
         initRecyclerView();
+
+        setToolbar();
+    }
+
+    // 以下与Toolbar有关
+    private void setToolbar(){
+        Toolbar toolbar = findViewById(R.id.history_toolbar);
+        setSupportActionBar(toolbar);
+        // 0是label
+        View titleView = toolbar.getChildAt(0);
+        Toolbar.LayoutParams layoutParams = new Toolbar.LayoutParams(
+                Toolbar.LayoutParams.WRAP_CONTENT,
+                Toolbar.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        titleView.setLayoutParams(layoutParams);
     }
 
     private void initData(){

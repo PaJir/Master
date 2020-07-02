@@ -7,7 +7,6 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
@@ -22,10 +21,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.NotificationCompat;
 
 import java.text.ParseException;
@@ -33,11 +32,20 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
+
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.QueryListener;
+import cn.bmob.v3.listener.UpdateListener;
 
 public class FloatingWindowService extends Service {
     private static final String TAG = "Floating_Master";
     public static boolean isStarted = false;
+    // 联机房间号
+    private static String objectId = null;
     // unit: second
     private static int chosedTime = 0;
     private static long leftTime = -1;
@@ -49,9 +57,11 @@ public class FloatingWindowService extends Service {
 
     private TextView textViewCurTime;
     private TextView textViewLeftTime;
+    private TextView textViewOnline;
     private View floatingView;
 
     private Handler timeHandle;
+    private Handler pullHandle;
 
     private BroadcastReceiver broadcastReceiver;
 
@@ -85,7 +95,7 @@ public class FloatingWindowService extends Service {
         return new NotificationCompat.Builder(this, notificationChannelId)
                         .setContentTitle(getText(R.string.noti_title))
                         .setContentText("")
-                        .setSmallIcon(R.drawable.icon)
+                        .setSmallIcon(R.drawable.master_icon)
                         //.setContentIntent(pendingIntent) // 启动内容
                         //.setTicker("???")
                         .build();
@@ -131,10 +141,16 @@ public class FloatingWindowService extends Service {
                         Log.d(TAG, "onReceive: ACTION_SCREEN_ON detected");
                         //timeHandle.removeCallbacksAndMessages(null);
                         fresh();
+                        if(objectId != null){
+                            pullOnlineSum();
+                        }
                         break;
                     case Intent.ACTION_SCREEN_OFF:
                         Log.d(TAG, "onReceive: ACTION_SCREEN_OFF detected");
                         timeHandle.removeCallbacksAndMessages(null);
+                        if(objectId != null){
+                            pullHandle.removeCallbacksAndMessages(null);
+                        }
                         break;
                     default:
                         Log.d(TAG, "onReceive: default");
@@ -148,7 +164,7 @@ public class FloatingWindowService extends Service {
     }
 
     @Override
-    // bounded Bindservice() 这个传递数据
+    // bounded Bindservice() 这个传递数据，不用
     public IBinder onBind(Intent intent){
         return null;
     }
@@ -160,6 +176,10 @@ public class FloatingWindowService extends Service {
         // unit: second
         leftTime = chosedTime = intent.getIntExtra("chosedTime", 0);
         startTime = intent.getStringExtra("startTime");
+        if(objectId == null) {
+            // maybe null, that's ok
+            objectId = intent.getStringExtra("objectId");
+        }
         calDuringTime(chosedTime);
         Log.d(TAG, "get chosedTime & startTime successfully");
         onShowFloatingWindow();
@@ -170,8 +190,12 @@ public class FloatingWindowService extends Service {
     public void onDestroy() {
         Log.d(TAG, "onDestroy: I destroy myself");
         isStarted = false;
-        // need to destroy this thread
+        // need to destroy thread(s)
         timeHandle.removeCallbacksAndMessages(null);
+        if(objectId != null){
+            pullHandle.removeCallbacksAndMessages(null);
+            updateBmob();
+        }
         // need to unregister boardcast receiver
         unregisterReceiver(broadcastReceiver);
 
@@ -204,21 +228,32 @@ public class FloatingWindowService extends Service {
         });
         // */
         Button buttonGiveup = floatingView.findViewById((R.id.buttonGiveup));
-        buttonGiveup.setOnClickListener(new View.OnClickListener(){
+        buttonGiveup.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view){
+            public void onClick(View view) {
                 // 验证身份
                 biometricAuth();
             }
         });
 
         fresh();
+        textViewOnline = floatingView.findViewById(R.id.textViewOnline);
+        LinearLayout.LayoutParams layoutParamsOnline = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        if (objectId != null) {
+            pullOnlineSum();
+            layoutParamsOnline.weight = 1;
+        }
+        else{
+            layoutParamsOnline.weight = 0;
+        }
+        textViewOnline.setLayoutParams(layoutParamsOnline);
 
         TextView textViewAllTime = floatingView.findViewById(R.id.textViewAllTime);
         textViewAllTime.setText(String.format(Locale.CHINA, "%d%s", chosedTime / getResources().getInteger(R.integer.sec_per_min), getResources().getString(R.string.minute)));
-        Log.d(TAG, "onShowFloatingWindow: "+chosedTime / getResources().getInteger(R.integer.sec_per_min));
+        Log.d(TAG, "onShowFloatingWindow: " + chosedTime / getResources().getInteger(R.integer.sec_per_min));
         TextView textViewDuringTime = floatingView.findViewById(R.id.textViewDuringTime);
-        textViewDuringTime.setText(String.format(Locale.CHINA, "%s - %s", startTime.substring(11, 16), endTime.substring(11, 16)));
+        textViewDuringTime.setText(String.format(Locale.CHINA, "%s - %s",
+                startTime.substring(11, 16), endTime.substring(11, 16)));
 
         windowManager.addView(floatingView, layoutParams);
     }
@@ -280,6 +315,37 @@ public class FloatingWindowService extends Service {
         }, 10);
     }
 
+    private void textViewOnlineSetText(int sum){
+        textViewOnline.setText(String.format(Locale.CHINA, "%d%s", sum, getResources().getString(R.string.online_suffix)));
+    }
+
+    // 联机时拉取在线人数
+    private void pullOnlineSum(){
+        Log.d(TAG, "pullOnlineSum: pulling");
+        pullHandle = new Handler(getMainLooper());
+        pullHandle.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // 判断roomId是否已经存在
+                BmobQuery<BmobContact> query = new BmobQuery<>();
+                query.addWhereEqualTo("objectId", objectId);
+                query.findObjects(new FindListener<BmobContact>() {
+                    @Override
+                    public void done(List<BmobContact> list, BmobException e) {
+                        if (e == null && !list.isEmpty()) {
+                            textViewOnlineSetText(list.get(0).getOnlineSum());
+                        }
+                        else{
+                            Log.d(TAG, "done: pull failed "+objectId);
+                        }
+                    }
+                });
+                pullHandle.postDelayed(this, 1000);
+            }
+        }, 10);
+
+    }
+
     // 服务开启时记录当前信息
     private void writeCurtoDB(){
         Log.d(TAG, "I will write it to db");
@@ -314,6 +380,33 @@ public class FloatingWindowService extends Service {
         db.delete("CurRecord", "id >= ?", new String[] {"0"});
         db.close();
         dbHelper.close();
+    }
+
+    // 结束时更新后端云
+    private void updateBmob(){
+        // 更新数据
+        BmobQuery<BmobContact> query = new BmobQuery<>();
+        query.getObject(objectId, new QueryListener<BmobContact>() {
+            @Override
+            public void done(BmobContact object, BmobException e) {
+                if(e==null){
+                    object.setOnlineSum(object.getOnlineSum()-1);
+                    object.update(object.getObjectId(), new UpdateListener() {
+                        @Override
+                        public void done(BmobException e) {
+                            Log.d(TAG, "done: objectId "+objectId);
+                            if(e!=null){
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
+                else{
+                    Log.d(TAG, "done: get object failed");
+                }
+            }
+        });
+        objectId = null;
     }
 
     // 拨打电话，弃

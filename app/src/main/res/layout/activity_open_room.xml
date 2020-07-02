@@ -14,21 +14,37 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/colorPrimary"
-        toolbar:logo="@mipmap/ic_launcher"
         android:elevation="4dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerTimeOpen"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/open_toolbar"
+        android:layout_marginTop="20dp"
+        android:entries="@array/co_time_data" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/spinnerTimeOpen"
+        android:layout_below="@id/open_toolbar"
+        android:layout_marginTop="25dp"
+        android:text="@string/minute" />
 
     <EditText
         android:id="@+id/editTextOpenId"
         android:layout_width="125dp"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_below="@id/open_toolbar"
-        android:layout_marginTop="20dp"
+        android:layout_below="@id/spinnerTimeOpen"
         android:gravity="center"
         android:hint="@string/idHint"
         android:selectAllOnFocus="true"
         android:inputType="number"
         android:singleLine="true"
+        android:maxLength="8"
         android:importantForAutofill="no"/>
 
     <Button
@@ -41,8 +57,8 @@
         android:layout_marginBottom="5dp"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
-        android:onClick="openRoom"
-        android:text="@string/enterOk"
+        android:onClick="checkRoom"
+        android:text="@string/openOk"
         android:textSize="25sp"
         android:textColor="#7c7c7c"/>
 
